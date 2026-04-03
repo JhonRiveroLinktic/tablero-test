@@ -6,7 +6,9 @@ export default async function DashboardPage() {
   const user = await getPortalUser();
 
   if (!user) {
-    redirect("/auth/error?reason=no_session");
+    // This shouldn't happen — proxy.ts handles unauthenticated users
+    // But as fallback, send to portal
+    redirect(process.env.NEXT_PUBLIC_PORTAL_URL ?? "/");
   }
 
   return (

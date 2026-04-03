@@ -2,6 +2,17 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getConfig, createSessionToken } from "@/lib/portal-auth";
 import type { PortalUser } from "@/lib/portal-auth";
 
+function redirectToPortalWithError(
+  portalUrl: string,
+  error: string,
+  appName: string
+) {
+  const url = new URL(portalUrl);
+  url.searchParams.set("sso_error", error);
+  url.searchParams.set("app", appName);
+  return NextResponse.redirect(url.toString());
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
@@ -10,23 +21,20 @@ export async function GET(request: NextRequest) {
   const returnTo = searchParams.get("return_to") ?? "/";
 
   const config = getConfig();
-  const portalLogin = config.portalUrl;
+  const appName = process.env.NEXT_PUBLIC_APP_NAME ?? "Aplicación";
 
   // Portal returned an error (no_session, no_access, unauthorized)
   if (error) {
     console.log("[sso/callback] Portal returned error:", error);
-    // Send user to the portal to log in
-    return NextResponse.redirect(portalLogin);
+    return redirectToPortalWithError(config.portalUrl, error, appName);
   }
 
   const expectedState = request.cookies.get("sso_state")?.value;
 
-  console.log("[sso/callback] code:", !!code, "state match:", state === expectedState);
-
-  // Invalid state or no code → send to portal
+  // Invalid state or no code
   if (!code || !state || state !== expectedState) {
-    console.log("[sso/callback] Invalid state, redirecting to portal");
-    return NextResponse.redirect(portalLogin);
+    console.log("[sso/callback] Invalid state, code:", !!code, "state match:", state === expectedState);
+    return redirectToPortalWithError(config.portalUrl, "invalid_state", appName);
   }
 
   // Verify code with portal (server-to-server)
@@ -43,8 +51,11 @@ export async function GET(request: NextRequest) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     console.log("[sso/callback] Verify failed:", res.status, err);
-    // Verification failed → send to portal
-    return NextResponse.redirect(portalLogin);
+    return redirectToPortalWithError(
+      config.portalUrl,
+      err?.error ?? "verify_failed",
+      appName
+    );
   }
 
   const user: PortalUser = await res.json();

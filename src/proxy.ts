@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // No valid session → one-time silent check against portal
-  const portalUrl = process.env.PORTAL_URL ?? "";
+  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? "";
   const appId = process.env.PORTAL_APP_ID ?? "";
   const state = nanoid();
   const callbackUrl = `${request.nextUrl.origin}/auth/sso/callback`;

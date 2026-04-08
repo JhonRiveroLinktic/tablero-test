@@ -3,12 +3,12 @@ import type { PortalAuthConfig } from "./types";
 const clean = (v: string) => v.replace(/^["']|["']$/g, "");
 
 export function getConfig(): PortalAuthConfig {
-  const portalUrl = clean(process.env.PORTAL_URL ?? "");
+  const portalUrl = clean(process.env.NEXT_PUBLIC_PORTAL_URL ?? "");
   const appId = clean(process.env.PORTAL_APP_ID ?? "");
   const appSecret = clean(process.env.PORTAL_APP_SECRET ?? "");
 
   if (!portalUrl || !appId || !appSecret) {
-    throw new Error("Missing PORTAL_URL, PORTAL_APP_ID, or PORTAL_APP_SECRET");
+    throw new Error("Missing NEXT_PUBLIC_PORTAL_URL, PORTAL_APP_ID, or PORTAL_APP_SECRET");
   }
 
   return {
